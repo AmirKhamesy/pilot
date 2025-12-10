@@ -1,27 +1,22 @@
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { Session } from '@supabase/supabase-js';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
     Platform,
-    SafeAreaView,
     ScrollView,
     StyleSheet,
     TextInput,
     TouchableOpacity,
     View
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../lib/supabase';
+import GitHubIntegration from './GitHubIntegration';
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
 import { IconSymbol } from './ui/icon-symbol';
-import GitHubIntegration from './GitHubIntegration';
-
-interface ProfileData {
-    username?: string;
-    avatar_url?: string;
-}
 
 export default function Account({ session }: { session: Session }) {
     const [loading, setLoading] = useState(true);
@@ -33,12 +28,14 @@ export default function Account({ session }: { session: Session }) {
     const textColor = useThemeColor({}, 'text');
     const tintColor = useThemeColor({}, 'tint');
     const iconColor = useThemeColor({}, 'icon');
+    const cardColor = useThemeColor({}, 'card');
+    const borderColor = useThemeColor({}, 'border');
+    const surfaceColor = useThemeColor({}, 'surface');
+    const textSecondary = useThemeColor({}, 'textSecondary');
+    const buttonPrimary = useThemeColor({}, 'buttonPrimary');
+    const buttonDanger = useThemeColor({}, 'buttonDanger');
 
-    useEffect(() => {
-        if (session) getProfile();
-    }, [session]);
-
-    async function getProfile() {
+    const getProfile = useCallback(async () => {
         try {
             setLoading(true);
             if (!session?.user) throw new Error('No user on the session!');
@@ -64,7 +61,11 @@ export default function Account({ session }: { session: Session }) {
         } finally {
             setLoading(false);
         }
-    }
+    }, [session?.user]);
+
+    useEffect(() => {
+        if (session) getProfile();
+    }, [session, getProfile]);
 
     async function updateProfile() {
         try {
@@ -111,54 +112,78 @@ export default function Account({ session }: { session: Session }) {
 
     if (loading) {
         return (
-            <ThemedView style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={tintColor} />
-                <ThemedText style={styles.loadingText}>Loading profile...</ThemedText>
+            <ThemedView style={[styles.loadingContainer, { backgroundColor }]}>
+                <View style={[styles.loadingCard, { backgroundColor: cardColor }]}>
+                    <ActivityIndicator size="large" color={tintColor} />
+                    <ThemedText style={[styles.loadingText, { color: textSecondary }]}>Loading profile...</ThemedText>
+                </View>
             </ThemedView>
         );
     }
 
     return (
-        <SafeAreaView style={[styles.safeArea, { backgroundColor }]}>
-            <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        <SafeAreaView style={[styles.safeArea, { backgroundColor }]} edges={['top', 'left', 'right']}>
+            <ScrollView
+                style={styles.container}
+                showsVerticalScrollIndicator={false}
+                contentInsetAdjustmentBehavior="automatic"
+            >
                 <View style={styles.header}>
-                    <View style={styles.avatarContainer}>
-                        <View style={[styles.avatar, { borderColor: tintColor }]}>
-                            <IconSymbol name="person.fill" size={40} color={iconColor} />
+                    <View style={[styles.avatarContainer, { backgroundColor: cardColor }]}>
+                        <View style={[styles.avatar, { backgroundColor: tintColor }]}>
+                            <IconSymbol name="person.fill" size={32} color="#FFFFFF" />
                         </View>
                     </View>
-                    <ThemedText type="title" style={styles.title}>Profile</ThemedText>
-                    <ThemedText style={styles.subtitle}>Manage your account information</ThemedText>
+                    <ThemedText type="title" style={[styles.title, { color: textColor }]}>
+                        Profile
+                    </ThemedText>
+                    <ThemedText style={[styles.subtitle, { color: textSecondary }]}>
+                        Manage your account settings
+                    </ThemedText>
                 </View>
 
-                <View style={styles.formContainer}>
-                    <View style={styles.fieldContainer}>
-                        <ThemedText style={styles.label}>Email Address</ThemedText>
-                        <View style={[styles.inputWrapper, styles.disabledInput, { borderColor: iconColor + '30' }]}>
-                            <IconSymbol name="envelope" size={20} color={iconColor} style={styles.inputIcon} />
-                            <TextInput
-                                style={[styles.input, { color: iconColor }]}
-                                value={session?.user?.email || ''}
-                                editable={false}
-                                placeholder="Email address"
-                                placeholderTextColor={iconColor}
-                            />
-                        </View>
-                    </View>
+                <View style={[styles.card, { backgroundColor: cardColor }]}>
+                    <ThemedText style={[styles.cardTitle, { color: textColor }]}>Account Information</ThemedText>
 
-                    <View style={styles.fieldContainer}>
-                        <ThemedText style={styles.label}>Username</ThemedText>
-                        <View style={[styles.inputWrapper, { borderColor: iconColor + '40' }]}>
-                            <IconSymbol name="person" size={20} color={iconColor} style={styles.inputIcon} />
-                            <TextInput
-                                style={[styles.input, { color: textColor }]}
-                                value={username}
-                                onChangeText={setUsername}
-                                placeholder="Enter username"
-                                placeholderTextColor={iconColor}
-                                autoCapitalize="none"
-                                maxLength={50}
-                            />
+                    <View style={styles.formSection}>
+                        <View style={styles.fieldContainer}>
+                            <ThemedText style={[styles.label, { color: textColor }]}>Email Address</ThemedText>
+                            <View style={[styles.inputWrapper, styles.disabledInput, {
+                                backgroundColor: surfaceColor,
+                                borderColor: borderColor
+                            }]}>
+                                <IconSymbol name="envelope" size={20} color={textSecondary} style={styles.inputIcon} />
+                                <TextInput
+                                    style={[styles.input, { color: textSecondary }]}
+                                    value={session?.user?.email || ''}
+                                    editable={false}
+                                    placeholder="Email address"
+                                    placeholderTextColor={textSecondary}
+                                />
+                                <IconSymbol name="lock" size={16} color={textSecondary} />
+                            </View>
+                            <ThemedText style={[styles.fieldHint, { color: textSecondary }]}>
+                                Your email cannot be changed
+                            </ThemedText>
+                        </View>
+
+                        <View style={styles.fieldContainer}>
+                            <ThemedText style={[styles.label, { color: textColor }]}>Username</ThemedText>
+                            <View style={[styles.inputWrapper, {
+                                backgroundColor: surfaceColor,
+                                borderColor: borderColor
+                            }]}>
+                                <IconSymbol name="person" size={20} color={iconColor} style={styles.inputIcon} />
+                                <TextInput
+                                    style={[styles.input, { color: textColor }]}
+                                    value={username}
+                                    onChangeText={setUsername}
+                                    placeholder="Enter username"
+                                    placeholderTextColor={textSecondary}
+                                    autoCapitalize="none"
+                                    maxLength={50}
+                                />
+                            </View>
                         </View>
                     </View>
                 </View>
@@ -167,34 +192,44 @@ export default function Account({ session }: { session: Session }) {
 
                 <View style={styles.actionsContainer}>
                     <TouchableOpacity
-                        style={[styles.button, styles.primaryButton]}
+                        style={[styles.button, styles.primaryButton, { backgroundColor: buttonPrimary }]}
                         onPress={updateProfile}
                         disabled={saving}
+                        activeOpacity={0.8}
                     >
                         {saving ? (
                             <View style={styles.buttonContent}>
-                                <ActivityIndicator size="small" color="#fff" style={styles.buttonLoader} />
-                                <ThemedText style={[styles.buttonText, styles.primaryButtonText]}>Updating...</ThemedText>
+                                <ActivityIndicator size="small" color="#FFFFFF" style={styles.buttonLoader} />
+                                <ThemedText style={styles.primaryButtonText}>Updating...</ThemedText>
                             </View>
                         ) : (
-                            <ThemedText style={[styles.buttonText, styles.primaryButtonText]}>Update Profile</ThemedText>
+                            <ThemedText style={styles.primaryButtonText}>Update Profile</ThemedText>
                         )}
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                        style={[styles.button, styles.dangerButton]}
+                        style={[styles.button, styles.dangerButton, { backgroundColor: buttonDanger }]}
                         onPress={signOut}
+                        activeOpacity={0.8}
                     >
-                        <IconSymbol name="arrow.right.square" size={20} color="#fff" style={styles.buttonIcon} />
-                        <ThemedText style={[styles.buttonText, styles.dangerButtonText]}>Sign Out</ThemedText>
+                        <ThemedText style={styles.dangerButtonText}>Sign Out</ThemedText>
                     </TouchableOpacity>
                 </View>
 
-                <View style={styles.accountInfo}>
-                    <ThemedText style={styles.accountInfoText}>
-                        Account created: {new Date(session?.user?.created_at || '').toLocaleDateString()}
-                    </ThemedText>
+                {/* Account Info */}
+                <View style={[styles.accountInfoCard, { backgroundColor: cardColor }]}>
+                    <View style={styles.accountInfoRow}>
+                        <IconSymbol name="calendar" size={16} color={textSecondary} />
+                        <ThemedText style={[styles.accountInfoText, { color: textSecondary }]}>
+                            Member since {new Date(session?.user?.created_at || '').toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                            })}
+                        </ThemedText>
+                    </View>
                 </View>
+
             </ScrollView>
         </SafeAreaView>
     );
@@ -213,46 +248,87 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 20,
     },
+    loadingCard: {
+        padding: 32,
+        borderRadius: 20,
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.1,
+        shadowRadius: 24,
+        elevation: 8,
+    },
     loadingText: {
         marginTop: 16,
         fontSize: 16,
+        fontWeight: '500',
     },
     header: {
         alignItems: 'center',
         paddingHorizontal: 20,
-        paddingTop: 20,
-        paddingBottom: 30,
+        paddingTop: 24,
+        paddingBottom: 32,
     },
     avatarContainer: {
-        marginBottom: 16,
+        width: 120,
+        height: 120,
+        borderRadius: 60,
+        marginBottom: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+        elevation: 8,
     },
     avatar: {
         width: 80,
         height: 80,
         borderRadius: 40,
-        borderWidth: 3,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'transparent',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 4,
     },
     title: {
         marginBottom: 8,
+        fontSize: 32,
+        fontWeight: '700',
     },
     subtitle: {
-        opacity: 0.7,
         textAlign: 'center',
+        fontSize: 16,
+        fontWeight: '500',
     },
-    formContainer: {
-        paddingHorizontal: 20,
-        paddingBottom: 30,
+    card: {
+        marginHorizontal: 20,
+        marginBottom: 24,
+        borderRadius: 16,
+        padding: 24,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.08,
+        shadowRadius: 16,
+        elevation: 4,
+    },
+    cardTitle: {
+        fontSize: 20,
+        fontWeight: '700',
+        marginBottom: 20,
+    },
+    formSection: {
+        gap: 20,
     },
     fieldContainer: {
-        marginBottom: 20,
+        gap: 8,
     },
     label: {
         fontSize: 16,
         fontWeight: '600',
-        marginBottom: 8,
     },
     inputWrapper: {
         flexDirection: 'row',
@@ -260,10 +336,11 @@ const styles = StyleSheet.create({
         borderWidth: 1.5,
         borderRadius: 12,
         paddingHorizontal: 16,
-        paddingVertical: Platform.OS === 'ios' ? 16 : 12,
+        paddingVertical: Platform.OS === 'ios' ? 16 : 14,
+        minHeight: 52,
     },
     disabledInput: {
-        opacity: 0.6,
+        opacity: 0.7,
     },
     inputIcon: {
         marginRight: 12,
@@ -271,20 +348,28 @@ const styles = StyleSheet.create({
     input: {
         flex: 1,
         fontSize: 16,
+        fontWeight: '500',
         padding: 0,
+    },
+    fieldHint: {
+        fontSize: 13,
+        fontWeight: '400',
+        marginTop: 4,
     },
     actionsContainer: {
         paddingHorizontal: 20,
-        paddingBottom: 20,
+        marginBottom: 24,
+        gap: 12,
     },
     button: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
+        borderRadius: 14,
         paddingVertical: 16,
         paddingHorizontal: 24,
-        borderRadius: 12,
-        marginBottom: 12,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+        elevation: 6,
     },
     primaryButton: {
         backgroundColor: '#007AFF',
@@ -300,6 +385,7 @@ const styles = StyleSheet.create({
     buttonContent: {
         flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'center',
     },
     buttonLoader: {
         marginRight: 8,
@@ -307,24 +393,38 @@ const styles = StyleSheet.create({
     buttonIcon: {
         marginRight: 8,
     },
-    buttonText: {
-        fontSize: 16,
-        fontWeight: '600',
-    },
     primaryButtonText: {
-        color: '#fff',
+        color: '#FFFFFF',
+        fontSize: 16,
+        fontWeight: '700',
     },
     dangerButtonText: {
-        color: '#fff',
+        color: '#FFFFFF',
+        fontSize: 16,
+        fontWeight: '700',
     },
-    accountInfo: {
-        paddingHorizontal: 20,
-        paddingBottom: 30,
+    accountInfoCard: {
+        marginHorizontal: 20,
+        marginBottom: 24,
+        borderRadius: 16,
+        padding: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        elevation: 2,
+    },
+    accountInfoRow: {
+        flexDirection: 'row',
         alignItems: 'center',
+        marginBottom: 8,
     },
     accountInfoText: {
-        fontSize: 12,
-        opacity: 0.6,
-        marginBottom: 4,
+        fontSize: 14,
+        fontWeight: '500',
+        marginLeft: 8,
+    },
+    bottomSpacing: {
+        height: 40,
     },
 });
