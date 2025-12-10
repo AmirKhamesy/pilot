@@ -43,6 +43,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "1160d1c1-8286-406f-8fa3-c49431a77b5d"
+      }
+    },
+    "owner": "partrima"
   }
 }
