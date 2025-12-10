@@ -16,6 +16,7 @@ import { supabase } from '../lib/supabase';
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
 import { IconSymbol } from './ui/icon-symbol';
+import GitHubIntegration from './GitHubIntegration';
 
 interface ProfileData {
     username?: string;
@@ -160,9 +161,9 @@ export default function Account({ session }: { session: Session }) {
                             />
                         </View>
                     </View>
-
-
                 </View>
+
+                <GitHubIntegration session={session} />
 
                 <View style={styles.actionsContainer}>
                     <TouchableOpacity
