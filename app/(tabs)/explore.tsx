@@ -54,7 +54,6 @@ export default function ProjectsScreen() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('DEBUG: Initial session loaded:', session?.user?.id);
       setSession(session);
       if (session) {
         loadData(session);
@@ -66,7 +65,6 @@ export default function ProjectsScreen() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      console.log('DEBUG: Auth state changed, session:', session?.user?.id);
       setSession(session);
       if (session) {
         loadData(session);
@@ -83,15 +81,12 @@ export default function ProjectsScreen() {
 
   // Debug effect to track modal state
   useEffect(() => {
-    console.log('DEBUG: showRepoModal changed to:', showRepoModal);
   }, [showRepoModal]);
 
   useEffect(() => {
-    console.log('DEBUG: showCreateModal changed to:', showCreateModal);
   }, [showCreateModal]);
 
   const loadData = async (currentSession: Session) => {
-    console.log('DEBUG: loadData called with session:', currentSession?.user?.id);
     if (!currentSession?.user?.id) return;
 
     try {
@@ -109,14 +104,11 @@ export default function ProjectsScreen() {
 
   const loadProjects = async (currentSession: Session) => {
     if (!currentSession?.user?.id) {
-      console.log('DEBUG: loadProjects called but no session user id');
       return;
     }
 
-    console.log('DEBUG: loadProjects called with userId:', currentSession.user.id);
     try {
       const userProjects = await projectService.getUserProjects(currentSession.user.id);
-      console.log('DEBUG: loadProjects received projects:', userProjects);
       setProjects(userProjects);
     } catch (error) {
       console.error('DEBUG: Error loading projects:', error);
@@ -140,19 +132,15 @@ export default function ProjectsScreen() {
   };
 
   const loadRepositories = async (githubConnection: GitHubConnection) => {
-    console.log('DEBUG: loadRepositories called');
     try {
       setLoadingRepos(true);
-      console.log('DEBUG: Fetching repositories from GitHub...');
       const repos = await githubService.getRepositoriesWithCache(githubConnection);
-      console.log('DEBUG: Received', repos.length, 'repositories');
       setRepositories(repos);
     } catch (error) {
       console.error('Error loading repositories:', error);
       Alert.alert('Error', 'Failed to load repositories');
     } finally {
       setLoadingRepos(false);
-      console.log('DEBUG: loadRepositories complete');
     }
   };
 
@@ -229,7 +217,6 @@ export default function ProjectsScreen() {
   };
 
   const selectRepository = (repo: GitHubRepository) => {
-    console.log('DEBUG: selectRepository called for', repo.name);
     setSelectedRepo(repo);
     setProjectName(repo.name);
     setProjectDescription(repo.description || '');
@@ -240,7 +227,6 @@ export default function ProjectsScreen() {
   };
 
   const openCreateModal = () => {
-    console.log('DEBUG: openCreateModal called, connection:', !!connection);
     if (!connection) {
       Alert.alert('GitHub Required', 'Please connect your GitHub account in the Profile tab first.');
       return;
@@ -250,17 +236,14 @@ export default function ProjectsScreen() {
     setProjectDescription('');
 
     if (repositories.length === 0 && connection) {
-      console.log('DEBUG: Loading repositories...');
       loadRepositories(connection);
     } else {
-      console.log('DEBUG: Repositories already loaded, count:', repositories.length);
     }
 
     setShowCreateModal(true);
   };
 
   const closeCreateModal = () => {
-    console.log('DEBUG: closeCreateModal called');
     setSelectedRepo(null);
     setProjectName('');
     setProjectDescription('');
@@ -268,31 +251,24 @@ export default function ProjectsScreen() {
   };
 
   const openRepoModal = () => {
-    console.log('DEBUG: openRepoModal called, current showRepoModal:', showRepoModal, 'loadingRepos:', loadingRepos);
 
     if (showRepoModal) {
-      console.log('DEBUG: Modal already open, ignoring');
       return;
     }
 
-    console.log('DEBUG: Temporarily hiding create modal');
     setTempHideCreateModal(true);
 
     setTimeout(() => {
-      console.log('DEBUG: Setting showRepoModal to true');
       setShowRepoModal(true);
 
       if (connection && !loadingRepos) {
-        console.log('DEBUG: Loading repositories for modal');
         loadRepositories(connection);
       } else {
-        console.log('DEBUG: Not loading repos, connection:', !!connection, 'loadingRepos:', loadingRepos);
       }
     }, 300);
   };
 
   const closeRepoModal = () => {
-    console.log('DEBUG: closeRepoModal called');
     setShowRepoModal(false);
     setTimeout(() => {
       setTempHideCreateModal(false);

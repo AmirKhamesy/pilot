@@ -1,12 +1,12 @@
-import * as AuthSession from 'expo-auth-session';
-import * as WebBrowser from 'expo-web-browser';
-import { supabase } from './supabase';
+import * as AuthSession from "expo-auth-session";
+import * as WebBrowser from "expo-web-browser";
 import {
-  GitHubUser,
-  GitHubRepository,
+  GitHubConnection,
   GitHubOAuthTokens,
-  GitHubConnection
-} from '../types/github';
+  GitHubRepository,
+  GitHubUser,
+} from "../types/github";
+import { supabase } from "./supabase";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -14,9 +14,10 @@ const GITHUB_CLIENT_ID = process.env.EXPO_PUBLIC_GITHUB_CLIENT_ID;
 const GITHUB_CLIENT_SECRET = process.env.EXPO_PUBLIC_GITHUB_CLIENT_SECRET;
 
 const discovery = {
-  authorizationEndpoint: 'https://github.com/login/oauth/authorize',
-  tokenEndpoint: 'https://github.com/login/oauth/access_token',
-  revocationEndpoint: 'https://github.com/settings/connections/applications/' + GITHUB_CLIENT_ID,
+  authorizationEndpoint: "https://github.com/login/oauth/authorize",
+  tokenEndpoint: "https://github.com/login/oauth/access_token",
+  revocationEndpoint:
+    "https://github.com/settings/connections/applications/" + GITHUB_CLIENT_ID,
 };
 
 export class GitHubService {
@@ -34,13 +35,15 @@ export class GitHubService {
 
   public async initializeOAuth(): Promise<AuthSession.AuthRequest> {
     if (!GITHUB_CLIENT_ID) {
-      throw new Error('GitHub Client ID is not configured. Please set EXPO_PUBLIC_GITHUB_CLIENT_ID in your environment variables.');
+      throw new Error(
+        "GitHub Client ID is not configured. Please set EXPO_PUBLIC_GITHUB_CLIENT_ID in your environment variables."
+      );
     }
 
     this.request = new AuthSession.AuthRequest({
       clientId: GITHUB_CLIENT_ID,
-      scopes: ['user:email', 'repo'],
-      redirectUri: 'pilot://auth/github/callback',
+      scopes: ["user:email", "repo"],
+      redirectUri: "pilot://auth/github/callback",
       responseType: AuthSession.ResponseType.Code,
       usePKCE: false, // handling token exchange manually
     });
@@ -53,9 +56,9 @@ export class GitHubService {
     if (!this.request) {
       await this.initializeOAuth();
     }
-    
+
     if (!this.request) {
-      throw new Error('Failed to initialize OAuth request');
+      throw new Error("Failed to initialize OAuth request");
     }
 
     const result = await this.request.promptAsync(discovery);
@@ -65,31 +68,31 @@ export class GitHubService {
 
   public async exchangeCodeForToken(code: string): Promise<GitHubOAuthTokens> {
     if (!GITHUB_CLIENT_ID || !GITHUB_CLIENT_SECRET) {
-      throw new Error('GitHub OAuth credentials are not configured');
+      throw new Error("GitHub OAuth credentials are not configured");
     }
 
-    console.log('Exchanging code for token with Client ID:', GITHUB_CLIENT_ID);
-
     try {
-      const response = await fetch('https://github.com/login/oauth/access_token', {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          client_id: GITHUB_CLIENT_ID,
-          client_secret: GITHUB_CLIENT_SECRET,
-          code,
-        }),
-      });
+      const response = await fetch(
+        "https://github.com/login/oauth/access_token",
+        {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            client_id: GITHUB_CLIENT_ID,
+            client_secret: GITHUB_CLIENT_SECRET,
+            code,
+          }),
+        }
+      );
 
       const responseText = await response.text();
-      console.log('GitHub token response status:', response.status);
-      console.log('GitHub token response:', responseText);
-
       if (!response.ok) {
-        throw new Error(`Failed to exchange code for token: ${response.status} ${response.statusText}. Response: ${responseText}`);
+        throw new Error(
+          `Failed to exchange code for token: ${response.status} ${response.statusText}. Response: ${responseText}`
+        );
       }
 
       let tokens;
@@ -98,28 +101,32 @@ export class GitHubService {
       } catch (parseError) {
         throw new Error(`Failed to parse GitHub response: ${responseText}`);
       }
-      
+
       if (tokens.error) {
-        throw new Error(`GitHub OAuth error: ${tokens.error_description || tokens.error}`);
+        throw new Error(
+          `GitHub OAuth error: ${tokens.error_description || tokens.error}`
+        );
       }
 
       if (!tokens.access_token) {
-        throw new Error(`No access token received. Response: ${JSON.stringify(tokens)}`);
+        throw new Error(
+          `No access token received. Response: ${JSON.stringify(tokens)}`
+        );
       }
 
       return tokens;
     } catch (error) {
-      console.error('Token exchange error:', error);
+      console.error("Token exchange error:", error);
       throw error;
     }
   }
 
   public async getUser(accessToken: string): Promise<GitHubUser> {
-    const response = await fetch('https://api.github.com/user', {
+    const response = await fetch("https://api.github.com/user", {
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Accept': 'application/vnd.github.v3+json',
-        'User-Agent': 'Pilot-App',
+        Authorization: `Bearer ${accessToken}`,
+        Accept: "application/vnd.github.v3+json",
+        "User-Agent": "Pilot-App",
       },
     });
 
@@ -130,14 +137,21 @@ export class GitHubService {
     return response.json();
   }
 
-  public async getUserRepositories(accessToken: string, page: number = 1, perPage: number = 30): Promise<GitHubRepository[]> {
-    const response = await fetch(`https://api.github.com/user/repos?sort=updated&per_page=${perPage}&page=${page}`, {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Accept': 'application/vnd.github.v3+json',
-        'User-Agent': 'Pilot-App',
-      },
-    });
+  public async getUserRepositories(
+    accessToken: string,
+    page: number = 1,
+    perPage: number = 30
+  ): Promise<GitHubRepository[]> {
+    const response = await fetch(
+      `https://api.github.com/user/repos?sort=updated&per_page=${perPage}&page=${page}`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          Accept: "application/vnd.github.v3+json",
+          "User-Agent": "Pilot-App",
+        },
+      }
+    );
 
     if (!response.ok) {
       throw new Error(`Failed to fetch repositories: ${response.statusText}`);
@@ -146,7 +160,11 @@ export class GitHubService {
     return response.json();
   }
 
-  public async saveConnection(userId: string, tokens: GitHubOAuthTokens, githubUser: GitHubUser): Promise<GitHubConnection> {
+  public async saveConnection(
+    userId: string,
+    tokens: GitHubOAuthTokens,
+    githubUser: GitHubUser
+  ): Promise<GitHubConnection> {
     const connectionData = {
       user_id: userId,
       github_user_id: githubUser.id,
@@ -160,9 +178,9 @@ export class GitHubService {
     };
 
     const { data, error } = await supabase
-      .from('github_connections')
+      .from("github_connections")
       .upsert(connectionData, {
-        onConflict: 'user_id',
+        onConflict: "user_id",
       })
       .select()
       .single();
@@ -176,12 +194,12 @@ export class GitHubService {
 
   public async getConnection(userId: string): Promise<GitHubConnection | null> {
     const { data, error } = await supabase
-      .from('github_connections')
-      .select('*')
-      .eq('user_id', userId)
+      .from("github_connections")
+      .select("*")
+      .eq("user_id", userId)
       .single();
 
-    if (error && error.code !== 'PGRST116') {
+    if (error && error.code !== "PGRST116") {
       throw new Error(`Failed to fetch GitHub connection: ${error.message}`);
     }
 
@@ -190,9 +208,9 @@ export class GitHubService {
 
   public async removeConnection(userId: string): Promise<void> {
     const { error } = await supabase
-      .from('github_connections')
+      .from("github_connections")
       .delete()
-      .eq('user_id', userId);
+      .eq("user_id", userId);
 
     if (error) {
       throw new Error(`Failed to remove GitHub connection: ${error.message}`);
@@ -201,11 +219,11 @@ export class GitHubService {
 
   public async validateToken(accessToken: string): Promise<boolean> {
     try {
-      const response = await fetch('https://api.github.com/user', {
+      const response = await fetch("https://api.github.com/user", {
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Accept': 'application/vnd.github.v3+json',
-          'User-Agent': 'Pilot-App',
+          Authorization: `Bearer ${accessToken}`,
+          Accept: "application/vnd.github.v3+json",
+          "User-Agent": "Pilot-App",
         },
       });
       return response.ok;
@@ -214,11 +232,15 @@ export class GitHubService {
     }
   }
 
-  public async getRepositoriesWithCache(connection: GitHubConnection): Promise<GitHubRepository[]> {
+  public async getRepositoriesWithCache(
+    connection: GitHubConnection
+  ): Promise<GitHubRepository[]> {
     const isValid = await this.validateToken(connection.access_token);
-    
+
     if (!isValid) {
-      throw new Error('GitHub access token has expired. Please reconnect your account.');
+      throw new Error(
+        "GitHub access token has expired. Please reconnect your account."
+      );
     }
 
     return this.getUserRepositories(connection.access_token);

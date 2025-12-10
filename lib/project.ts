@@ -4,7 +4,6 @@ import { supabase } from "./supabase";
 
 export class ProjectService {
   async getUserProjects(userId: string): Promise<Project[]> {
-    console.log("DEBUG: getUserProjects called with userId:", userId);
     const { data, error } = await supabase
       .from("projects")
       .select("*")
@@ -16,7 +15,6 @@ export class ProjectService {
       throw new Error("Failed to fetch projects");
     }
 
-    console.log("DEBUG: getUserProjects result:", data);
     return data || [];
   }
 
