@@ -55,6 +55,10 @@ export default function Auth() {
                     placeholderTextColor={isDark ? '#888' : '#999'}
                     autoCapitalize={'none'}
                     keyboardType="email-address"
+                    textContentType="emailAddress"
+                    autoComplete="email"
+                    importantForAutofill="yes"
+                    returnKeyType="next"
                 />
             </View>
             <View style={styles.inputContainer}>
@@ -66,6 +70,10 @@ export default function Auth() {
                     placeholder="Password"
                     placeholderTextColor={isDark ? '#888' : '#999'}
                     autoCapitalize={'none'}
+                    textContentType="password"
+                    autoComplete="current-password"
+                    importantForAutofill="yes"
+                    returnKeyType="done"
                 />
             </View>
             <TouchableOpacity
