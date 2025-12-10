@@ -216,7 +216,6 @@ export default function Account({ session }: { session: Session }) {
                     </TouchableOpacity>
                 </View>
 
-                {/* Account Info */}
                 <View style={[styles.accountInfoCard, { backgroundColor: cardColor }]}>
                     <View style={styles.accountInfoRow}>
                         <IconSymbol name="calendar" size={16} color={textSecondary} />

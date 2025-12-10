@@ -1,6 +1,7 @@
 import { Session } from '@supabase/supabase-js';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
     ActivityIndicator,
     Alert,
@@ -18,6 +19,7 @@ import { useThemeColor } from '@/hooks/use-theme-color';
 import { projectService } from '@/lib/project';
 import { supabase } from '@/lib/supabase';
 import { Project } from '@/types/project';
+import ProjectHeader from '@/components/ProjectHeader';
 
 export default function ProjectDetailScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
@@ -36,6 +38,31 @@ export default function ProjectDetailScreen() {
     const buttonPrimary = useThemeColor({}, 'buttonPrimary');
     const successColor = useThemeColor({}, 'success');
     const buttonDanger = useThemeColor({}, 'buttonDanger');
+
+    const loadProject = useCallback(async () => {
+        if (!id) return;
+
+        try {
+            setLoading(true);
+            const projectData = await projectService.getProject(id);
+
+            if (!projectData) {
+                Alert.alert('Error', 'Project not found', [
+                    { text: 'OK', onPress: () => router.back() }
+                ]);
+                return;
+            }
+
+            setProject(projectData);
+        } catch (error) {
+            console.error('Error loading project:', error);
+            Alert.alert('Error', 'Failed to load project', [
+                { text: 'OK', onPress: () => router.back() }
+            ]);
+        } finally {
+            setLoading(false);
+        }
+    }, [id]);
 
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
@@ -59,38 +86,27 @@ export default function ProjectDetailScreen() {
         });
 
         return () => subscription.unsubscribe();
-    }, [id]);
-
-    const loadProject = async () => {
-        if (!id) return;
-
-        try {
-            setLoading(true);
-            const projectData = await projectService.getProject(id);
-
-            if (!projectData) {
-                Alert.alert('Error', 'Project not found', [
-                    { text: 'OK', onPress: () => router.back() }
-                ]);
-                return;
-            }
-
-            setProject(projectData);
-        } catch (error) {
-            console.error('Error loading project:', error);
-            Alert.alert('Error', 'Failed to load project', [
-                { text: 'OK', onPress: () => router.back() }
-            ]);
-        } finally {
-            setLoading(false);
-        }
-    };
+    }, [id, loadProject]);
 
     const handleOpenRepository = useCallback(() => {
         if (project?.github_repo_url) {
             Linking.openURL(project.github_repo_url);
         }
     }, [project]);
+
+    const handleViewIssues = useCallback(() => {
+        if (project?.github_repo_full_name) {
+            const [owner, repo] = project.github_repo_full_name.split('/');
+            router.push({
+                pathname: '/project/issues',
+                params: {
+                    owner,
+                    repo,
+                    projectId: id,
+                },
+            });
+        }
+    }, [project, id]);
 
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString('en-US', {
@@ -111,18 +127,18 @@ export default function ProjectDetailScreen() {
 
     if (loading) {
         return (
-            <View style={[styles.container, { backgroundColor }]}>
+            <SafeAreaView style={[styles.container, { backgroundColor }]}>
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color={tintColor} />
                     <ThemedText style={[styles.loadingText, { color: textSecondary }]}>Loading project...</ThemedText>
                 </View>
-            </View>
+            </SafeAreaView>
         );
     }
 
     if (!session) {
         return (
-            <View style={[styles.container, { backgroundColor }]}>
+            <SafeAreaView style={[styles.container, { backgroundColor }]}>
                 <View style={styles.emptyContainer}>
                     <IconSymbol name="person.fill.xmark" size={64} color={textSecondary} />
                     <ThemedText type="title" style={[styles.emptyTitle, { color: textColor }]}>
@@ -132,47 +148,40 @@ export default function ProjectDetailScreen() {
                         Please sign in to view project details
                     </ThemedText>
                 </View>
-            </View>
+            </SafeAreaView>
         );
     }
 
     if (!project) {
         return (
-            <View style={[styles.container, { backgroundColor }]}>
+            <SafeAreaView style={[styles.container, { backgroundColor }]}>
                 <View style={styles.emptyContainer}>
                     <IconSymbol name="folder.fill.badge.questionmark" size={64} color={textSecondary} />
                     <ThemedText type="title" style={[styles.emptyTitle, { color: textColor }]}>
                         Project Not Found
                     </ThemedText>
                     <ThemedText style={[styles.emptyDescription, { color: textSecondary }]}>
-                        The project you`&apos;`re looking for doesn`&apos;`t exist
+                        The project you&apos;re looking for doesn&apos;t exist
                     </ThemedText>
                 </View>
-            </View>
+            </SafeAreaView>
         );
     }
 
     return (
-        <View style={[styles.container, { backgroundColor }]}>
+        <SafeAreaView style={[styles.container, { backgroundColor }]}>
+            <Stack.Screen options={{ headerShown: false }} />
+            <ProjectHeader
+                showBack
+                title={project.name}
+                iconName="folder.fill"
+                url={project.github_repo_url}
+            />
             <ScrollView
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
             >
-                <View style={styles.projectHeader}>
-                    <View style={[styles.projectIcon, { backgroundColor: buttonPrimary + '20' }]}>
-                        <IconSymbol name="folder.fill" size={32} color={buttonPrimary} />
-                    </View>
-                    <View style={styles.projectTitleSection}>
-                        <ThemedText type="title" style={[styles.projectTitle, { color: textColor, fontFamily: Fonts.rounded }]}>
-                            {project.name}
-                        </ThemedText>
-                        <ThemedText style={[styles.projectRepo, { color: textSecondary }]}>
-                            {project.github_repo_full_name}
-                        </ThemedText>
-                    </View>
-                </View>
-
                 {project.description && (
                     <View style={[styles.descriptionCard, { backgroundColor: cardColor, borderColor }]}>
                         <ThemedText style={[styles.descriptionText, { color: textColor }]}>
@@ -180,6 +189,20 @@ export default function ProjectDetailScreen() {
                         </ThemedText>
                     </View>
                 )}
+
+                <TouchableOpacity
+                    style={[styles.actionsCard, { backgroundColor: tintColor, borderColor: tintColor }]}
+                    onPress={handleViewIssues}
+                    activeOpacity={0.8}
+                >
+                    <View style={styles.actionContent}>
+                        <IconSymbol name="exclamationmark.circle" size={24} color="#FFFFFF" />
+                        <ThemedText style={styles.actionButtonText}>
+                            View Issues
+                        </ThemedText>
+                        <IconSymbol name="chevron.right" size={20} color="#FFFFFF" />
+                    </View>
+                </TouchableOpacity>
 
                 <View style={[styles.infoCard, { backgroundColor: cardColor, borderColor }]}>
                     <View style={styles.infoHeader}>
@@ -195,7 +218,7 @@ export default function ProjectDetailScreen() {
                                 <ThemedText style={[styles.infoLabel, { color: textSecondary }]}>Repository</ThemedText>
                             </View>
                             <ThemedText style={[styles.infoValue, { color: textColor }]}>
-                                {project.github_repo_name}
+                                {project.github_repo_full_name}
                             </ThemedText>
                         </View>
 
@@ -231,6 +254,18 @@ export default function ProjectDetailScreen() {
                             </View>
                         </View>
 
+                        {project.github_repo_updated_at && (
+                            <View style={styles.infoRow}>
+                                <View style={styles.infoItem}>
+                                    <IconSymbol name="arrow.clockwise" size={16} color={iconColor} />
+                                    <ThemedText style={[styles.infoLabel, { color: textSecondary }]}>Last Updated</ThemedText>
+                                </View>
+                                <ThemedText style={[styles.infoValue, { color: textColor }]}>
+                                    {formatDate(project.github_repo_updated_at)}
+                                </ThemedText>
+                            </View>
+                        )}
+
                         {project.github_repo_description && (
                             <View style={styles.infoRow}>
                                 <View style={styles.infoItem}>
@@ -247,111 +282,9 @@ export default function ProjectDetailScreen() {
                     </View>
                 </View>
 
-                <View style={[styles.statsCard, { backgroundColor: cardColor, borderColor }]}>
-                    <ThemedText type="defaultSemiBold" style={[styles.statsTitle, { color: textColor }]}>
-                        Repository Statistics
-                    </ThemedText>
-
-                    <View style={styles.statsGrid}>
-                        <View style={[styles.statItem, { backgroundColor: surfaceColor }]}>
-                            <View style={[styles.statIcon, { backgroundColor: '#FFD60A' + '20' }]}>
-                                <IconSymbol name="star.fill" size={20} color="#FFD60A" />
-                            </View>
-                            <ThemedText style={[styles.statValue, { color: textColor }]}>
-                                {formatNumber(project.github_repo_stars)}
-                            </ThemedText>
-                            <ThemedText style={[styles.statLabel, { color: textSecondary }]}>
-                                Stars
-                            </ThemedText>
-                        </View>
-
-                        <View style={[styles.statItem, { backgroundColor: surfaceColor }]}>
-                            <View style={[styles.statIcon, { backgroundColor: tintColor + '20' }]}>
-                                <IconSymbol name="arrow.branch" size={20} color={tintColor} />
-                            </View>
-                            <ThemedText style={[styles.statValue, { color: textColor }]}>
-                                {formatNumber(project.github_repo_forks)}
-                            </ThemedText>
-                            <ThemedText style={[styles.statLabel, { color: textSecondary }]}>
-                                Forks
-                            </ThemedText>
-                        </View>
-                    </View>
-                </View>
-
-                <View style={[styles.timestampsCard, { backgroundColor: cardColor, borderColor }]}>
-                    <ThemedText type="defaultSemiBold" style={[styles.timestampsTitle, { color: textColor }]}>
-                        Timeline
-                    </ThemedText>
-
-                    <View style={styles.timestampsList}>
-                        <View style={styles.timestampItem}>
-                            <View style={[styles.timestampIcon, { backgroundColor: buttonPrimary + '20' }]}>
-                                <IconSymbol name="plus" size={16} color={buttonPrimary} />
-                            </View>
-                            <View style={styles.timestampContent}>
-                                <ThemedText style={[styles.timestampLabel, { color: textSecondary }]}>
-                                    Project Created
-                                </ThemedText>
-                                <ThemedText style={[styles.timestampValue, { color: textColor }]}>
-                                    {formatDate(project.created_at)}
-                                </ThemedText>
-                            </View>
-                        </View>
-
-                        {project.github_repo_updated_at && (
-                            <View style={styles.timestampItem}>
-                                <View style={[styles.timestampIcon, { backgroundColor: successColor + '20' }]}>
-                                    <IconSymbol name="arrow.clockwise" size={16} color={successColor} />
-                                </View>
-                                <View style={styles.timestampContent}>
-                                    <ThemedText style={[styles.timestampLabel, { color: textSecondary }]}>
-                                        Repository Updated
-                                    </ThemedText>
-                                    <ThemedText style={[styles.timestampValue, { color: textColor }]}>
-                                        {formatDate(project.github_repo_updated_at)}
-                                    </ThemedText>
-                                </View>
-                            </View>
-                        )}
-
-                        <View style={styles.timestampItem}>
-                            <View style={[styles.timestampIcon, { backgroundColor: tintColor + '20' }]}>
-                                <IconSymbol name="pencil" size={16} color={tintColor} />
-                            </View>
-                            <View style={styles.timestampContent}>
-                                <ThemedText style={[styles.timestampLabel, { color: textSecondary }]}>
-                                    Project Updated
-                                </ThemedText>
-                                <ThemedText style={[styles.timestampValue, { color: textColor }]}>
-                                    {formatDate(project.updated_at)}
-                                </ThemedText>
-                            </View>
-                        </View>
-                    </View>
-                </View>
-
-                <View style={[styles.actionsCard, { backgroundColor: cardColor, borderColor }]}>
-                    <ThemedText type="defaultSemiBold" style={[styles.actionsTitle, { color: textColor }]}>
-                        Quick Actions
-                    </ThemedText>
-
-                    <TouchableOpacity
-                        style={[styles.actionButton, { backgroundColor: buttonPrimary }]}
-                        onPress={handleOpenRepository}
-                        activeOpacity={0.8}
-                    >
-                        <IconSymbol name="safari" size={20} color="#FFFFFF" />
-                        <ThemedText style={styles.actionButtonText}>
-                            Open Repository
-                        </ThemedText>
-                        <IconSymbol name="arrow.up.right" size={16} color="#FFFFFF" />
-                    </TouchableOpacity>
-                </View>
-
                 <View style={styles.bottomSpacer} />
             </ScrollView>
-        </View>
+        </SafeAreaView>
     );
 }
 
@@ -392,6 +325,7 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         flexGrow: 1,
+        paddingHorizontal: 20,
     },
     projectHeader: {
         flexDirection: 'row',
@@ -420,7 +354,6 @@ const styles = StyleSheet.create({
         fontSize: 15,
     },
     descriptionCard: {
-        marginHorizontal: 20,
         marginBottom: 16,
         borderRadius: 16,
         padding: 20,
@@ -431,7 +364,6 @@ const styles = StyleSheet.create({
         lineHeight: 24,
     },
     infoCard: {
-        marginHorizontal: 20,
         marginBottom: 16,
         borderRadius: 16,
         padding: 20,
@@ -489,108 +421,21 @@ const styles = StyleSheet.create({
         lineHeight: 22,
         marginTop: 8,
     },
-    statsCard: {
-        marginHorizontal: 20,
-        marginBottom: 16,
-        borderRadius: 16,
-        padding: 20,
-        borderWidth: 1,
-    },
-    statsTitle: {
-        fontSize: 18,
-        fontWeight: '600',
-        marginBottom: 16,
-    },
-    statsGrid: {
-        flexDirection: 'row',
-        gap: 16,
-    },
-    statItem: {
-        flex: 1,
-        alignItems: 'center',
-        padding: 16,
-        borderRadius: 12,
-    },
-    statIcon: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: 12,
-    },
-    statValue: {
-        fontSize: 24,
-        fontWeight: '700',
-        marginBottom: 4,
-    },
-    statLabel: {
-        fontSize: 14,
-        fontWeight: '500',
-    },
-    timestampsCard: {
-        marginHorizontal: 20,
-        marginBottom: 16,
-        borderRadius: 16,
-        padding: 20,
-        borderWidth: 1,
-    },
-    timestampsTitle: {
-        fontSize: 18,
-        fontWeight: '600',
-        marginBottom: 16,
-    },
-    timestampsList: {
-        gap: 16,
-    },
-    timestampItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    timestampIcon: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 16,
-    },
-    timestampContent: {
-        flex: 1,
-    },
-    timestampLabel: {
-        fontSize: 14,
-        fontWeight: '500',
-        marginBottom: 2,
-    },
-    timestampValue: {
-        fontSize: 16,
-        fontWeight: '600',
-    },
     actionsCard: {
-        marginHorizontal: 20,
-        marginBottom: 24,
+        marginBottom: 16,
         borderRadius: 16,
-        padding: 20,
         borderWidth: 1,
     },
-    actionsTitle: {
-        fontSize: 18,
-        fontWeight: '600',
-        marginBottom: 16,
-    },
-    actionButton: {
+    actionContent: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'space-between',
         paddingHorizontal: 20,
         paddingVertical: 16,
-        borderRadius: 12,
-        gap: 12,
     },
     actionButtonText: {
         color: '#FFFFFF',
-        fontSize: 16,
+        fontSize: 17,
         fontWeight: '600',
         flex: 1,
         textAlign: 'center',

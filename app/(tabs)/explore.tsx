@@ -79,7 +79,6 @@ export default function ProjectsScreen() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Debug effect to track modal state
   useEffect(() => {
   }, [showRepoModal]);
 
@@ -311,7 +310,6 @@ export default function ProjectsScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={tintColor} />
         }
       >
-        {/* Header */}
         <View style={styles.header}>
           <View>
             <ThemedText type="title" style={[styles.title, { color: textColor, fontFamily: Fonts.rounded }]}>
@@ -330,7 +328,6 @@ export default function ProjectsScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Projects List */}
         {projects.length === 0 ? (
           <View style={styles.emptyContainer}>
             <IconSymbol name="folder.badge.plus" size={64} color={textSecondary} />

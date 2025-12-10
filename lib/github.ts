@@ -1,7 +1,9 @@
 import * as AuthSession from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
 import {
+  GitHubComment,
   GitHubConnection,
+  GitHubIssue,
   GitHubOAuthTokens,
   GitHubRepository,
   GitHubUser,
@@ -98,7 +100,7 @@ export class GitHubService {
       let tokens;
       try {
         tokens = JSON.parse(responseText);
-      } catch (parseError) {
+      } catch {
         throw new Error(`Failed to parse GitHub response: ${responseText}`);
       }
 
@@ -244,6 +246,83 @@ export class GitHubService {
     }
 
     return this.getUserRepositories(connection.access_token);
+  }
+
+  public async getRepositoryIssues(
+    accessToken: string,
+    owner: string,
+    repo: string,
+    state: "open" | "closed" | "all" = "all",
+    page: number = 1,
+    perPage: number = 30
+  ): Promise<GitHubIssue[]> {
+    const response = await fetch(
+      `https://api.github.com/repos/${owner}/${repo}/issues?state=${state}&per_page=${perPage}&page=${page}`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          Accept: "application/vnd.github.v3+json",
+          "User-Agent": "Pilot-App",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch issues: ${response.statusText}`);
+    }
+
+    const issues: GitHubIssue[] = await response.json();
+    return issues.filter((issue) => !issue.pull_request);
+  }
+
+  public async getIssue(
+    accessToken: string,
+    owner: string,
+    repo: string,
+    issueNumber: number
+  ): Promise<GitHubIssue> {
+    const response = await fetch(
+      `https://api.github.com/repos/${owner}/${repo}/issues/${issueNumber}`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          Accept: "application/vnd.github.v3+json",
+          "User-Agent": "Pilot-App",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch issue: ${response.statusText}`);
+    }
+
+    return response.json();
+  }
+
+  public async getIssueComments(
+    accessToken: string,
+    owner: string,
+    repo: string,
+    issueNumber: number,
+    page: number = 1,
+    perPage: number = 30
+  ): Promise<GitHubComment[]> {
+    const response = await fetch(
+      `https://api.github.com/repos/${owner}/${repo}/issues/${issueNumber}/comments?per_page=${perPage}&page=${page}`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          Accept: "application/vnd.github.v3+json",
+          "User-Agent": "Pilot-App",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch comments: ${response.statusText}`);
+    }
+
+    return response.json();
   }
 }
 

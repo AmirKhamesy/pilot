@@ -167,3 +167,95 @@ export interface GitHubConnection {
   connected_at: string;
   updated_at: string;
 }
+
+export interface GitHubIssue {
+  id: number;
+  node_id: string;
+  url: string;
+  repository_url: string;
+  labels_url: string;
+  comments_url: string;
+  events_url: string;
+  html_url: string;
+  number: number;
+  state: "open" | "closed";
+  title: string;
+  body: string | null;
+  user: {
+    login: string;
+    id: number;
+    avatar_url: string;
+    html_url: string;
+  };
+  labels: {
+    id: number;
+    node_id: string;
+    url: string;
+    name: string;
+    color: string;
+    default: boolean;
+    description: string | null;
+  }[];
+  assignee: {
+    login: string;
+    id: number;
+    avatar_url: string;
+    html_url: string;
+  } | null;
+  assignees: {
+    login: string;
+    id: number;
+    avatar_url: string;
+    html_url: string;
+  }[];
+  milestone: any | null;
+  comments: number;
+  created_at: string;
+  updated_at: string;
+  closed_at: string | null;
+  author_association: string;
+  active_lock_reason: string | null;
+  draft: boolean;
+  pull_request?: {
+    url: string;
+    html_url: string;
+    diff_url: string;
+    patch_url: string;
+  };
+  body_html?: string;
+  body_text?: string;
+  timeline_url?: string;
+  performed_via_github_app: any | null;
+  state_reason: string | null;
+}
+
+export interface GitHubComment {
+  id: number;
+  node_id: string;
+  url: string;
+  html_url: string;
+  body: string;
+  body_html?: string;
+  body_text?: string;
+  user: {
+    login: string;
+    id: number;
+    avatar_url: string;
+    html_url: string;
+  };
+  created_at: string;
+  updated_at: string;
+  author_association: string;
+  reactions?: {
+    url: string;
+    total_count: number;
+    "+1": number;
+    "-1": number;
+    laugh: number;
+    hooray: number;
+    confused: number;
+    heart: number;
+    rocket: number;
+    eyes: number;
+  };
+}
