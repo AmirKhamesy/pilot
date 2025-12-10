@@ -30,12 +30,16 @@ export default function GitHubIntegration({ session }: GitHubIntegrationProps) {
   const [showRepoModal, setShowRepoModal] = useState(false);
 
   const backgroundColor = useThemeColor({}, 'background');
+  const textColor = useThemeColor({}, 'text');
   const tintColor = useThemeColor({}, 'tint');
   const iconColor = useThemeColor({}, 'icon');
-  const cardBackground = useThemeColor(
-    { light: '#f8f9fa', dark: '#1f2937' },
-    'background'
-  );
+  const cardColor = useThemeColor({}, 'card');
+  const borderColor = useThemeColor({}, 'border');
+  const surfaceColor = useThemeColor({}, 'surface');
+  const textSecondary = useThemeColor({}, 'textSecondary');
+  const buttonPrimary = useThemeColor({}, 'buttonPrimary');
+  const buttonDanger = useThemeColor({}, 'buttonDanger');
+  const successColor = useThemeColor({}, 'success');
 
   const loadConnection = useCallback(async () => {
     if (!session?.user?.id) return;
@@ -62,11 +66,7 @@ export default function GitHubIntegration({ session }: GitHubIntegrationProps) {
       console.error('Error loading repositories:', error);
       Alert.alert(
         'Error',
-        'Failed to load repositories. Your GitHub connection may have expired.',
-        [
-          { text: 'Reconnect', onPress: () => connectToGitHub() },
-          { text: 'Cancel', style: 'cancel' }
-        ]
+        'Failed to load repositories. Your GitHub connection may have expired.'
       );
     } finally {
       setLoadingRepos(false);
@@ -168,91 +168,121 @@ export default function GitHubIntegration({ session }: GitHubIntegrationProps) {
 
   if (loading) {
     return (
-      <ThemedView style={styles.loadingContainer}>
-        <ActivityIndicator size="small" color={tintColor} />
-        <ThemedText style={styles.loadingText}>Loading GitHub connection...</ThemedText>
-      </ThemedView>
+      <View style={[styles.card, { backgroundColor: cardColor }]}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="small" color={tintColor} />
+          <ThemedText style={[styles.loadingText, { color: textSecondary }]}>Loading GitHub connection...</ThemedText>
+        </View>
+      </View>
     );
   }
 
   return (
-    <ThemedView style={styles.container}>
-      <ThemedView style={[styles.header, { backgroundColor: cardBackground }]}>
+    <View style={[styles.card, { backgroundColor: cardColor }]}>
+      <View style={styles.cardHeader}>
         <View style={styles.headerContent}>
-          <IconSymbol name="globe" size={24} color={iconColor} />
-          <ThemedText type="subtitle" style={styles.headerTitle}>GitHub Integration</ThemedText>
+          <View style={[styles.iconContainer, { backgroundColor: buttonPrimary }]}>
+            <IconSymbol name="globe" size={20} color="#FFFFFF" />
+          </View>
+          <View>
+            <ThemedText style={[styles.cardTitle, { color: textColor }]}>GitHub Integration</ThemedText>
+            <ThemedText style={[styles.cardSubtitle, { color: textSecondary }]}>
+              {connection ? 'Connected' : 'Not connected'}
+            </ThemedText>
+          </View>
         </View>
-      </ThemedView>
+        {connection && (
+          <View style={[styles.statusBadge, { backgroundColor: successColor }]}>
+            <IconSymbol name="checkmark" size={12} color="#FFFFFF" />
+          </View>
+        )}
+      </View>
 
       {!connection ? (
-        <ThemedView style={styles.connectSection}>
-          <ThemedText style={[styles.description, { color: iconColor }]}>
-            Connect your GitHub account to access your repositories and collaborate on your projects.
+        <View style={styles.connectSection}>
+          <ThemedText style={[styles.description, { color: textSecondary }]}>
+            Connect your GitHub account to access repositories, manage projects, and collaborate with your team.
           </ThemedText>
           
           <TouchableOpacity
-            style={[styles.connectButton, { backgroundColor: tintColor }]}
+            style={[styles.connectButton, { backgroundColor: buttonPrimary }]}
             onPress={connectToGitHub}
             disabled={connecting}
+            activeOpacity={0.8}
           >
             {connecting ? (
               <View style={styles.buttonContent}>
-                <ActivityIndicator size="small" color="#fff" style={styles.buttonLoader} />
+                <ActivityIndicator size="small" color="#FFFFFF" style={styles.buttonLoader} />
                 <ThemedText style={styles.connectButtonText}>Connecting...</ThemedText>
               </View>
             ) : (
               <View style={styles.buttonContent}>
-                <IconSymbol name="link" size={20} color="#fff" style={styles.buttonIcon} />
+                <IconSymbol name="link" size={20} color="#FFFFFF" style={styles.buttonIcon} />
                 <ThemedText style={styles.connectButtonText}>Connect to GitHub</ThemedText>
               </View>
             )}
           </TouchableOpacity>
-        </ThemedView>
+        </View>
       ) : (
-        <ThemedView style={styles.connectedSection}>
-          <View style={[styles.connectionCard, { backgroundColor: cardBackground }]}>
+        <View style={styles.connectedSection}>
+          <View style={[styles.connectionCard, { backgroundColor: surfaceColor, borderColor: borderColor }]}>
             <View style={styles.connectionHeader}>
               <View style={styles.connectionInfo}>
-                <View style={styles.avatarContainer}>
-                  {/* In a real app, you'd use an Image component with connection.github_avatar_url */}
-                  <IconSymbol name="person.fill" size={20} color={iconColor} />
+                <View style={[styles.avatarContainer, { backgroundColor: buttonPrimary }]}>
+                  <IconSymbol name="person.fill" size={16} color="#FFFFFF" />
                 </View>
-                <View>
-                  <ThemedText type="defaultSemiBold">@{connection.github_username}</ThemedText>
-                  <ThemedText style={[styles.connectionDate, { color: iconColor }]}>
-                    Connected {new Date(connection.connected_at).toLocaleDateString()}
+                <View style={styles.connectionDetails}>
+                  <ThemedText style={[styles.githubUsername, { color: textColor }]}>
+                    @{connection.github_username}
+                  </ThemedText>
+                  <ThemedText style={[styles.connectionDate, { color: textSecondary }]}>
+                    Connected {new Date(connection.connected_at).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric'
+                    })}
                   </ThemedText>
                 </View>
               </View>
               
               <TouchableOpacity
-                style={styles.disconnectButton}
+                style={[styles.disconnectButton, { backgroundColor: buttonDanger + '20' }]}
                 onPress={disconnectFromGitHub}
+                activeOpacity={0.7}
               >
-                <IconSymbol name="xmark" size={16} color="#ef4444" />
+                <IconSymbol name="xmark" size={14} color={buttonDanger} />
               </TouchableOpacity>
             </View>
           </View>
 
           <View style={styles.repositorySection}>
-            <ThemedText type="defaultSemiBold" style={styles.sectionTitle}>
-              Repositories
+            <ThemedText style={[styles.sectionTitle, { color: textColor }]}>
+              Repository Access
+            </ThemedText>
+            <ThemedText style={[styles.sectionSubtitle, { color: textSecondary }]}>
+              Select a repository to work with
             </ThemedText>
             
             {loadingRepos ? (
-              <View style={styles.loadingContainer}>
+              <View style={styles.repoLoadingContainer}>
                 <ActivityIndicator size="small" color={tintColor} />
-                <ThemedText style={styles.loadingText}>Loading repositories...</ThemedText>
+                <ThemedText style={[styles.loadingText, { color: textSecondary }]}>Loading repositories...</ThemedText>
               </View>
             ) : (
               <>
                 <TouchableOpacity
-                  style={[styles.repositorySelector, { backgroundColor: cardBackground, borderColor: iconColor + '40' }]}
+                  style={[styles.repositorySelector, { 
+                    backgroundColor: surfaceColor, 
+                    borderColor: borderColor 
+                  }]}
                   onPress={() => setShowRepoModal(true)}
+                  activeOpacity={0.7}
                 >
                   <View style={styles.repositorySelectorContent}>
-                    <IconSymbol name="folder" size={20} color={iconColor} />
-                    <ThemedText style={styles.repositorySelectorText}>
+                    <View style={[styles.repoIconContainer, { backgroundColor: buttonPrimary + '20' }]}>
+                      <IconSymbol name="folder" size={16} color={buttonPrimary} />
+                    </View>
+                    <ThemedText style={[styles.repositorySelectorText, { color: textColor }]}>
                       {selectedRepo ? selectedRepo.full_name : 'Select a repository'}
                     </ThemedText>
                   </View>
@@ -260,33 +290,68 @@ export default function GitHubIntegration({ session }: GitHubIntegrationProps) {
                 </TouchableOpacity>
 
                 {selectedRepo && (
-                  <View style={[styles.selectedRepoCard, { backgroundColor: cardBackground }]}>
+                  <View style={[styles.selectedRepoCard, { 
+                    backgroundColor: surfaceColor, 
+                    borderColor: borderColor 
+                  }]}>
                     <View style={styles.selectedRepoHeader}>
-                      <ThemedText type="defaultSemiBold">{selectedRepo.name}</ThemedText>
+                      <View>
+                        <ThemedText style={[styles.repoName, { color: textColor }]}>
+                          {selectedRepo.name}
+                        </ThemedText>
+                        <ThemedText style={[styles.repoFullName, { color: textSecondary }]}>
+                          {selectedRepo.full_name}
+                        </ThemedText>
+                      </View>
                       <View style={styles.repoStats}>
-                        <View style={styles.repoStat}>
-                          <IconSymbol name="star" size={14} color={iconColor} />
-                          <ThemedText style={styles.repoStatText}>{selectedRepo.stargazers_count}</ThemedText>
+                        <View style={[styles.repoStat, { backgroundColor: cardColor }]}>
+                          <IconSymbol name="star" size={12} color={iconColor} />
+                          <ThemedText style={[styles.repoStatText, { color: textSecondary }]}>
+                            {selectedRepo.stargazers_count}
+                          </ThemedText>
                         </View>
-                        <View style={styles.repoStat}>
-                          <IconSymbol name="arrow.branch" size={14} color={iconColor} />
-                          <ThemedText style={styles.repoStatText}>{selectedRepo.forks_count}</ThemedText>
+                        <View style={[styles.repoStat, { backgroundColor: cardColor }]}>
+                          <IconSymbol name="arrow.branch" size={12} color={iconColor} />
+                          <ThemedText style={[styles.repoStatText, { color: textSecondary }]}>
+                            {selectedRepo.forks_count}
+                          </ThemedText>
                         </View>
                       </View>
                     </View>
                     {selectedRepo.description && (
-                      <ThemedText style={[styles.repoDescription, { color: iconColor }]}>
+                      <ThemedText style={[styles.repoDescription, { color: textSecondary }]}>
                         {selectedRepo.description}
                       </ThemedText>
                     )}
                     <View style={styles.repoMeta}>
-                      {selectedRepo.language && (
-                        <View style={styles.languageTag}>
-                          <ThemedText style={styles.languageText}>{selectedRepo.language}</ThemedText>
+                      <View style={styles.repoMetaLeft}>
+                        {selectedRepo.language && (
+                          <View style={[styles.languageTag, { backgroundColor: buttonPrimary + '20' }]}>
+                            <ThemedText style={[styles.languageText, { color: buttonPrimary }]}>
+                              {selectedRepo.language}
+                            </ThemedText>
+                          </View>
+                        )}
+                        <View style={[styles.visibilityTag, { 
+                          backgroundColor: selectedRepo.private ? buttonDanger + '20' : successColor + '20' 
+                        }]}>
+                          <IconSymbol 
+                            name={selectedRepo.private ? "lock" : "globe"} 
+                            size={10} 
+                            color={selectedRepo.private ? buttonDanger : successColor} 
+                          />
+                          <ThemedText style={[styles.visibilityText, { 
+                            color: selectedRepo.private ? buttonDanger : successColor 
+                          }]}>
+                            {selectedRepo.private ? 'Private' : 'Public'}
+                          </ThemedText>
                         </View>
-                      )}
-                      <ThemedText style={[styles.repoDate, { color: iconColor }]}>
-                        Updated {new Date(selectedRepo.updated_at || '').toLocaleDateString()}
+                      </View>
+                      <ThemedText style={[styles.repoDate, { color: textSecondary }]}>
+                        Updated {new Date(selectedRepo.updated_at || '').toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric'
+                        })}
                       </ThemedText>
                     </View>
                   </View>
@@ -294,7 +359,7 @@ export default function GitHubIntegration({ session }: GitHubIntegrationProps) {
               </>
             )}
           </View>
-        </ThemedView>
+        </View>
       )}
 
       <Modal
@@ -305,50 +370,87 @@ export default function GitHubIntegration({ session }: GitHubIntegrationProps) {
       >
         <ThemedView style={[styles.modalContainer, { backgroundColor }]}>
           <View style={styles.modalHeader}>
-            <ThemedText type="title">Select Repository</ThemedText>
-            <TouchableOpacity onPress={() => setShowRepoModal(false)}>
-              <IconSymbol name="xmark" size={24} color={iconColor} />
+            <ThemedText type="title" style={{ color: textColor }}>Select Repository</ThemedText>
+            <TouchableOpacity 
+              onPress={() => setShowRepoModal(false)}
+              style={[styles.modalCloseButton, { backgroundColor: cardColor }]}
+            >
+              <IconSymbol name="xmark" size={20} color={iconColor} />
             </TouchableOpacity>
           </View>
           
-          <ScrollView style={styles.repositoryList}>
+          <ScrollView style={styles.repositoryList} showsVerticalScrollIndicator={false}>
             {repositories.map((repo) => (
               <TouchableOpacity
                 key={repo.id}
                 style={[
                   styles.repositoryItem,
-                  { backgroundColor: cardBackground },
-                  selectedRepo?.id === repo.id && { borderColor: tintColor, borderWidth: 2 }
+                  { backgroundColor: cardColor, borderColor: borderColor },
+                  selectedRepo?.id === repo.id && { 
+                    borderColor: buttonPrimary, 
+                    borderWidth: 2,
+                    backgroundColor: buttonPrimary + '10'
+                  }
                 ]}
                 onPress={() => selectRepository(repo)}
+                activeOpacity={0.7}
               >
                 <View style={styles.repositoryItemHeader}>
-                  <ThemedText type="defaultSemiBold" numberOfLines={1}>
+                  <ThemedText 
+                    style={[styles.repositoryItemName, { color: textColor }]}
+                    numberOfLines={1}
+                  >
                     {repo.name}
                   </ThemedText>
                   <View style={styles.repositoryItemStats}>
-                    <View style={styles.repoStat}>
+                    <View style={[styles.repoStat, { backgroundColor: surfaceColor }]}>
                       <IconSymbol name="star" size={12} color={iconColor} />
-                      <ThemedText style={styles.smallStatText}>{repo.stargazers_count}</ThemedText>
+                      <ThemedText style={[styles.repoStatText, { color: textSecondary }]}>
+                        {repo.stargazers_count}
+                      </ThemedText>
                     </View>
                   </View>
                 </View>
+                <ThemedText style={[styles.repositoryItemFullName, { color: textSecondary }]}>
+                  {repo.full_name}
+                </ThemedText>
                 {repo.description && (
                   <ThemedText 
-                    style={[styles.repositoryItemDescription, { color: iconColor }]}
+                    style={[styles.repositoryItemDescription, { color: textSecondary }]}
                     numberOfLines={2}
                   >
                     {repo.description}
                   </ThemedText>
                 )}
                 <View style={styles.repositoryItemMeta}>
-                  {repo.language && (
-                    <ThemedText style={[styles.repositoryItemLanguage, { color: tintColor }]}>
-                      {repo.language}
-                    </ThemedText>
-                  )}
-                  <ThemedText style={[styles.repositoryItemDate, { color: iconColor }]}>
-                    {new Date(repo.updated_at || '').toLocaleDateString()}
+                  <View style={styles.repoMetaLeft}>
+                    {repo.language && (
+                      <View style={[styles.languageTag, { backgroundColor: buttonPrimary + '20' }]}>
+                        <ThemedText style={[styles.languageText, { color: buttonPrimary }]}>
+                          {repo.language}
+                        </ThemedText>
+                      </View>
+                    )}
+                    <View style={[styles.visibilityTag, { 
+                      backgroundColor: repo.private ? buttonDanger + '20' : successColor + '20' 
+                    }]}>
+                      <IconSymbol 
+                        name={repo.private ? "lock" : "globe"} 
+                        size={10} 
+                        color={repo.private ? buttonDanger : successColor} 
+                      />
+                      <ThemedText style={[styles.visibilityText, { 
+                        color: repo.private ? buttonDanger : successColor 
+                      }]}>
+                        {repo.private ? 'Private' : 'Public'}
+                      </ThemedText>
+                    </View>
+                  </View>
+                  <ThemedText style={[styles.repositoryItemDate, { color: textSecondary }]}>
+                    {new Date(repo.updated_at || '').toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric'
+                    })}
                   </ThemedText>
                 </View>
               </TouchableOpacity>
@@ -356,72 +458,109 @@ export default function GitHubIntegration({ session }: GitHubIntegrationProps) {
           </ScrollView>
         </ThemedView>
       </Modal>
-    </ThemedView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    marginVertical: 20,
+  card: {
+    marginHorizontal: 20,
+    marginBottom: 24,
+    borderRadius: 16,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 4,
   },
-  loadingContainer: {
+  cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    justifyContent: 'center',
-  },
-  loadingText: {
-    marginLeft: 8,
-    fontSize: 14,
-  },
-  header: {
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 16,
+    justifyContent: 'space-between',
+    marginBottom: 20,
   },
   headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
   },
-  headerTitle: {
+  iconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  cardSubtitle: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  statusBadge: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 20,
+  },
+  loadingText: {
     marginLeft: 12,
+    fontSize: 14,
+    fontWeight: '500',
   },
   connectSection: {
-    padding: 16,
+    gap: 20,
   },
   description: {
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 20,
-    textAlign: 'center',
+    fontSize: 15,
+    lineHeight: 22,
+    fontWeight: '500',
   },
   connectButton: {
-    borderRadius: 8,
-    paddingVertical: 12,
+    borderRadius: 14,
+    paddingVertical: 16,
     paddingHorizontal: 24,
-    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 6,
   },
   buttonContent: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  buttonIcon: {
-    marginRight: 8,
+    justifyContent: 'center',
   },
   buttonLoader: {
     marginRight: 8,
   },
+  buttonIcon: {
+    marginRight: 8,
+  },
   connectButtonText: {
-    color: '#fff',
-    fontWeight: '600',
+    color: '#FFFFFF',
     fontSize: 16,
+    fontWeight: '700',
   },
   connectedSection: {
-    gap: 16,
+    gap: 20,
   },
   connectionCard: {
-    padding: 16,
     borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
   },
   connectionHeader: {
     flexDirection: 'row',
@@ -431,35 +570,59 @@ const styles = StyleSheet.create({
   connectionInfo: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
   },
   avatarContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    alignItems: 'center',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 12,
   },
+  connectionDetails: {
+    flex: 1,
+  },
+  githubUsername: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
   connectionDate: {
-    fontSize: 12,
-    marginTop: 2,
+    fontSize: 13,
+    fontWeight: '500',
   },
   disconnectButton: {
-    padding: 8,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   repositorySection: {
-    gap: 12,
+    gap: 16,
   },
   sectionTitle: {
-    marginBottom: 4,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  sectionSubtitle: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginTop: -8,
+  },
+  repoLoadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
   },
   repositorySelector: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 16,
-    borderRadius: 8,
+    borderRadius: 12,
     borderWidth: 1,
   },
   repositorySelectorContent: {
@@ -467,61 +630,95 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
   },
+  repoIconContainer: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
   repositorySelectorText: {
-    marginLeft: 12,
+    fontSize: 15,
+    fontWeight: '600',
     flex: 1,
   },
   selectedRepoCard: {
-    padding: 16,
     borderRadius: 12,
-    marginTop: 8,
+    padding: 16,
+    borderWidth: 1,
+    gap: 12,
   },
   selectedRepoHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
-    marginBottom: 8,
+  },
+  repoName: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  repoFullName: {
+    fontSize: 13,
+    fontWeight: '500',
   },
   repoStats: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 8,
   },
   repoStat: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
     gap: 4,
   },
   repoStatText: {
     fontSize: 12,
-  },
-  smallStatText: {
-    fontSize: 10,
+    fontWeight: '600',
   },
   repoDescription: {
     fontSize: 14,
-    marginBottom: 12,
     lineHeight: 20,
+    fontWeight: '500',
   },
   repoMeta: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+  repoMetaLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   languageTag: {
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 4,
-    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+    borderRadius: 8,
   },
   languageText: {
-    fontSize: 12,
-    color: '#3b82f6',
-    fontWeight: '500',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  visibilityTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 6,
+    gap: 4,
+  },
+  visibilityText: {
+    fontSize: 11,
+    fontWeight: '700',
   },
   repoDate: {
     fontSize: 12,
+    fontWeight: '500',
   },
-  // Modal styles
   modalContainer: {
     flex: 1,
     paddingTop: 20,
@@ -533,6 +730,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 20,
   },
+  modalCloseButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   repositoryList: {
     flex: 1,
     paddingHorizontal: 20,
@@ -542,13 +746,21 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: 'transparent',
+    gap: 8,
   },
   repositoryItemHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 4,
+  },
+  repositoryItemName: {
+    fontSize: 16,
+    fontWeight: '700',
+    flex: 1,
+  },
+  repositoryItemFullName: {
+    fontSize: 13,
+    fontWeight: '500',
   },
   repositoryItemStats: {
     flexDirection: 'row',
@@ -556,19 +768,16 @@ const styles = StyleSheet.create({
   },
   repositoryItemDescription: {
     fontSize: 14,
-    marginBottom: 8,
     lineHeight: 18,
+    fontWeight: '500',
   },
   repositoryItemMeta: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  repositoryItemLanguage: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
   repositoryItemDate: {
     fontSize: 12,
+    fontWeight: '500',
   },
 });
